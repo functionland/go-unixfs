@@ -10,6 +10,7 @@ message Data {
 		Metadata = 3;
 		Symlink = 4;
 		HAMTShard = 5;
+		EncFile = 6;
 	}
 
 	required DataType Type = 1;
@@ -19,6 +20,8 @@ message Data {
 
 	optional uint64 hashType = 5;
 	optional uint64 fanout = 6;
+
+	optional bytes jwe = 7;
 }
 
 message Metadata {
