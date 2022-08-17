@@ -29,6 +29,7 @@ const (
 	TMetadata  = pb.Data_Metadata
 	TSymlink   = pb.Data_Symlink
 	THAMTShard = pb.Data_HAMTShard
+	TEncFile   = pb.Data_EncFile
 )
 
 // Common errors
@@ -281,6 +282,10 @@ func (n *FSNode) SetData(newData []byte) {
 	n.format.Data = newData
 }
 
+func (n *FSNode) SetJWE(jwe []byte) {
+	n.format.Jwe = jwe
+}
+
 // UpdateFilesize updates the `Filesize` field from the internal `format`
 // by a signed difference (`filesizeDiff`).
 // TODO: Add assert to check for `Filesize` > 0?
@@ -302,6 +307,11 @@ func (n *FSNode) IsDir() bool {
 	default:
 		return false
 	}
+}
+
+// IsEncryptedFile checks weather it is an encrypted file or not
+func (n *FSNode) IsEncryptedFile() bool {
+	return n.format.GetType() == pb.Data_EncFile
 }
 
 // Metadata is used to store additional FSNode information.
