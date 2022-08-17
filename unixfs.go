@@ -286,6 +286,10 @@ func (n *FSNode) SetJWE(jwe []byte) {
 	n.format.Jwe = jwe
 }
 
+func (n *FSNode) GetJWE() []byte {
+	return n.format.Jwe
+}
+
 // UpdateFilesize updates the `Filesize` field from the internal `format`
 // by a signed difference (`filesizeDiff`).
 // TODO: Add assert to check for `Filesize` > 0?
@@ -389,7 +393,7 @@ func ReadUnixFSNodeData(node ipld.Node) (data []byte, err error) {
 		}
 
 		switch fsNode.Type() {
-		case pb.Data_File, pb.Data_Raw:
+		case pb.Data_File, pb.Data_Raw, pb.Data_EncFile:
 			return fsNode.Data(), nil
 			// Only leaf nodes (of type `Data_Raw`) contain data but due to a
 			// bug the `Data_File` type (normally used for internal nodes) is
