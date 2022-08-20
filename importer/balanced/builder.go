@@ -51,13 +51,15 @@ package balanced
 
 import (
 	"errors"
-	"fmt"
 
 	ft "github.com/ipfs/go-unixfs"
 	h "github.com/ipfs/go-unixfs/importer/helpers"
 
 	ipld "github.com/ipfs/go-ipld-format"
+	logging "github.com/ipfs/go-log"
 )
+
+var log = logging.Logger("importer/balanced/builder")
 
 // Layout builds a balanced DAG layout. In a balanced DAG of depth 1, leaf nodes
 // with data are added to a single `root` until the maximum number of links is
@@ -131,9 +133,9 @@ import (
 //        +=========+   +=========+   + - - - - +
 //
 func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
-	fmt.Println("inside Layout 2")
+	log.Debug("inside Layout 2")
 	if db.Done() {
-		fmt.Println("db.done on leyout")
+		log.Debug("db.done on leyout")
 		// No data, return just an empty node.
 		root, err := db.NewLeafNode(nil, ft.TFile)
 		if err != nil {
@@ -267,9 +269,9 @@ func fillNodeRec(db *h.DagBuilderHelper, node *h.FSNodeOverDag, depth int) (fill
 }
 
 func LayoutEnc(db *h.DagBuilderHelper, jwe []byte) (ipld.Node, error) {
-	fmt.Println("inside LayoutEnc rrrrrrrrrrrrrrrrrrr", jwe)
+	log.Debug("inside LayoutEnc", jwe)
 	if db.Done() {
-		fmt.Println("inside LayoutEnc rrrrrrrrrrrrrrrrrrrdddd", jwe)
+		log.Debug("inside LayoutEnc db.Done() block", jwe)
 		// No data, return just an empty node.
 		root, err := db.NewLeafNode(nil, ft.TEncFile)
 		if err != nil {
@@ -285,7 +287,6 @@ func LayoutEnc(db *h.DagBuilderHelper, jwe []byte) (ipld.Node, error) {
 	// (corner case), after that subsequent `root` nodes will
 	// always be internal nodes (with a depth > 0) that can
 	// be handled by the loop.
-	fmt.Println("SSDFSD")
 	root, fileSize, err := db.NewLeafEncDataNode(ft.TEncFile, jwe)
 	if err != nil {
 		return nil, err
@@ -294,9 +295,9 @@ func LayoutEnc(db *h.DagBuilderHelper, jwe []byte) (ipld.Node, error) {
 	// Each time a DAG of a certain `depth` is filled (because it
 	// has reached its maximum capacity of `db.Maxlinks()` per node)
 	// extend it by making it a sub-DAG of a bigger DAG with `depth+1`.
-	fmt.Println("before tree buildd")
+	log.Debug("before tree buildd")
 	for depth := 1; !db.Done(); depth++ {
-		fmt.Println("before fillenc")
+		log.Debug("before fillenc")
 
 		// Add the old `root` as a child of the `newRoot`.
 		newRoot := db.NewFSNodeOverDag(ft.TEncFile)
@@ -359,10 +360,10 @@ func fillEncNodeRec(db *h.DagBuilderHelper, node *h.FSNodeOverDag, depth int, jw
 	// Get the final `dag.ProtoNode` with the `FSNode` data encoded inside.
 	if db.Done() {
 		filledNode, err = node.CommitWJwe(jwe)
-		fmt.Println("Committed wieredly")
+		log.Debug("Committed with JWE")
 	} else {
 		filledNode, err = node.Commit()
-		fmt.Println("Committed normally")
+		log.Debug("Committed normally")
 	}
 	if err != nil {
 		return nil, 0, err
