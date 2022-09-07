@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ipfs/go-unixfs/hamt"
-	"github.com/ipfs/go-unixfs/private/linksize"
+	"github.com/functionland/go-unixfs/hamt"
+	"github.com/functionland/go-unixfs/private/linksize"
 
 	"github.com/alecthomas/units"
+	format "github.com/functionland/go-unixfs"
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	logging "github.com/ipfs/go-log"
 	mdag "github.com/ipfs/go-merkledag"
-	format "github.com/ipfs/go-unixfs"
 )
 
 var log = logging.Logger("unixfs")

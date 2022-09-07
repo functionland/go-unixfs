@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	ft "github.com/ipfs/go-unixfs"
-	h "github.com/ipfs/go-unixfs/importer/helpers"
+	ft "github.com/functionland/go-unixfs"
+	h "github.com/functionland/go-unixfs/importer/helpers"
 
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"

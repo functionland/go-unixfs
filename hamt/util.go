@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/bits"
 
-	"github.com/ipfs/go-unixfs/internal"
+	"github.com/functionland/go-unixfs/internal"
 
 	"github.com/spaolacci/murmur3"
 )

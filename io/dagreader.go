@@ -6,10 +6,10 @@ import (
 	"errors"
 	"io"
 
+	unixfs "github.com/functionland/go-unixfs"
+	unixfs_pb "github.com/functionland/go-unixfs/pb"
 	ipld "github.com/ipfs/go-ipld-format"
 	mdag "github.com/ipfs/go-merkledag"
-	unixfs "github.com/ipfs/go-unixfs"
-	unixfs_pb "github.com/ipfs/go-unixfs/pb"
 )
 
 // Common errors
