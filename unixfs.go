@@ -10,8 +10,8 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	dag "github.com/ipfs/go-merkledag"
 
+	pb "github.com/functionland/go-unixfs/pb"
 	ipld "github.com/ipfs/go-ipld-format"
-	pb "github.com/ipfs/go-unixfs/pb"
 )
 
 // A LinkResult for any parallel enumeration of links

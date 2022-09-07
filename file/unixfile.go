@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	ft "github.com/ipfs/go-unixfs"
-	uio "github.com/ipfs/go-unixfs/io"
+	ft "github.com/functionland/go-unixfs"
+	uio "github.com/functionland/go-unixfs/io"
 
 	files "github.com/ipfs/go-ipfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
@@ -177,3 +177,8 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node) (fi
 		DagReader: dr,
 	}, nil
 }
+
+// var _ files.Directory = &ufsDirectory{}
+// var _ files.File = &ufsFile{}
+
+// var _ pfs.EncodedFile = &ufsFile{}

@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"github.com/ipfs/go-unixfs/internal"
 	"math"
 	"testing"
+
+	"github.com/functionland/go-unixfs/internal"
 
 	mdtest "github.com/ipfs/go-merkledag/test"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ipfs/go-unixfs"
-	"github.com/ipfs/go-unixfs/hamt"
+	"github.com/functionland/go-unixfs"
+	"github.com/functionland/go-unixfs/hamt"
 
 	ipld "github.com/ipfs/go-ipld-format"
 )
