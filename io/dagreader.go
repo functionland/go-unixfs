@@ -9,6 +9,7 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	mdag "github.com/ipfs/go-merkledag"
 	unixfs "github.com/ipfs/go-unixfs"
+	unixfs_pb "github.com/ipfs/go-unixfs/pb"
 )
 
 // Common errors
@@ -29,6 +30,7 @@ var (
 type DagReader interface {
 	ReadSeekCloser
 	Size() uint64
+	JWE() []byte
 	CtxReadFull(context.Context, []byte) (int, error)
 }
 
@@ -44,6 +46,7 @@ type ReadSeekCloser interface {
 // the given node, using the passed in DAGService for data retrieval.
 func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagReader, error) {
 	var size uint64
+	var jwe []byte
 
 	switch n := n.(type) {
 	case *mdag.RawNode:
@@ -58,7 +61,9 @@ func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagRe
 		switch fsNode.Type() {
 		case unixfs.TFile, unixfs.TRaw:
 			size = fsNode.FileSize()
-
+		case unixfs_pb.Data_EncFile:
+			size = fsNode.FileSize()
+			jwe = fsNode.GetJWE()
 		case unixfs.TDirectory, unixfs.THAMTShard:
 			// Dont allow reading directories
 			return nil, ErrIsDir
@@ -95,6 +100,7 @@ func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagRe
 		size:      size,
 		rootNode:  n,
 		dagWalker: ipld.NewWalker(ctxWithCancel, ipld.NewNavigableIPLDNode(n, serv)),
+		jwe:       jwe,
 	}, nil
 }
 
@@ -131,11 +137,17 @@ type dagReader struct {
 	// Passed to the `dagWalker` that will use it to request nodes.
 	// TODO: Revisit name.
 	serv ipld.NodeGetter
+
+	jwe []byte
 }
 
 // Size returns the total size of the data from the DAG structured file.
 func (dr *dagReader) Size() uint64 {
 	return dr.size
+}
+
+func (dr *dagReader) JWE() []byte {
+	return dr.jwe
 }
 
 // Read implements the `io.Reader` interface through the `CtxReadFull`

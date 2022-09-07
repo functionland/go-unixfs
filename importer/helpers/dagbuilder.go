@@ -172,6 +172,38 @@ func (db *DagBuilderHelper) NewLeafNode(data []byte, fsNodeType pb.Data_DataType
 	return node, nil
 }
 
+func (db *DagBuilderHelper) NewEncLeafNode(data []byte, fsNodeType pb.Data_DataType, jwe []byte) (ipld.Node, error) {
+	if len(data) > BlockSizeLimit {
+		return nil, ErrSizeLimitExceeded
+	}
+
+	if db.rawLeaves {
+		// Encapsulate the data in a raw node.
+		if db.cidBuilder == nil {
+			return dag.NewRawNode(data), nil
+		}
+		rawnode, err := dag.NewRawNodeWPrefix(data, db.cidBuilder)
+		if err != nil {
+			return nil, err
+		}
+		return rawnode, nil
+	}
+
+	// Encapsulate the data in UnixFS node (instead of a raw node).
+	fsNodeOverDag := db.NewEncFSNodeOverDag(fsNodeType, jwe)
+	fsNodeOverDag.SetFileData(data)
+	// node, err := fsNodeOverDag.Commit()
+	node, err := fsNodeOverDag.CommitWJwe(jwe)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Encapsulate this sequence of calls into a function that
+	// just returns the final `ipld.Node` avoiding going through
+	// `FSNodeOverDag`.
+
+	return node, nil
+}
+
 // FillNodeLayer will add datanodes as children to the give node until
 // it is full in this layer or no more data.
 // NOTE: This function creates raw data nodes so it only works
@@ -212,6 +244,25 @@ func (db *DagBuilderHelper) NewLeafDataNode(fsNodeType pb.Data_DataType) (node i
 
 	// Create a new leaf node containing the file chunk data.
 	node, err = db.NewLeafNode(fileData, fsNodeType)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Convert this leaf to a `FilestoreNode` if needed.
+	node = db.ProcessFileStore(node, dataSize)
+
+	return node, dataSize, nil
+}
+
+func (db *DagBuilderHelper) NewLeafEncDataNode(fsNodeType pb.Data_DataType, jwe []byte) (node ipld.Node, dataSize uint64, err error) {
+	fileData, err := db.Next()
+	if err != nil {
+		return nil, 0, err
+	}
+	dataSize = uint64(len(fileData) + len(jwe))
+
+	// Create a new leaf node containing the file chunk data.
+	node, err = db.NewEncLeafNode(fileData, fsNodeType, jwe)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -303,6 +354,17 @@ func (db *DagBuilderHelper) NewFSNodeOverDag(fsNodeType pb.Data_DataType) *FSNod
 	return node
 }
 
+func (db *DagBuilderHelper) NewEncFSNodeOverDag(fsNodeType pb.Data_DataType, jwe []byte) *FSNodeOverDag {
+	node := new(FSNodeOverDag)
+	node.dag = new(dag.ProtoNode)
+	node.dag.SetCidBuilder(db.GetCidBuilder())
+
+	node.file = ft.NewFSNode(fsNodeType)
+	node.file.SetJWE(jwe)
+
+	return node
+}
+
 // NewFSNFromDag reconstructs a FSNodeOverDag node from a given dag node
 func (db *DagBuilderHelper) NewFSNFromDag(nd *dag.ProtoNode) (*FSNodeOverDag, error) {
 	return NewFSNFromDag(nd)
@@ -349,6 +411,17 @@ func (n *FSNodeOverDag) RemoveChild(index int, dbh *DagBuilderHelper) {
 //
 // TODO: Make it read-only after committing, allow to commit only once.
 func (n *FSNodeOverDag) Commit() (ipld.Node, error) {
+	fileData, err := n.file.GetBytes()
+	if err != nil {
+		return nil, err
+	}
+	n.dag.SetData(fileData)
+
+	return n.dag, nil
+}
+
+func (n *FSNodeOverDag) CommitWJwe(jwe []byte) (ipld.Node, error) {
+	n.file.SetJWE(jwe)
 	fileData, err := n.file.GetBytes()
 	if err != nil {
 		return nil, err

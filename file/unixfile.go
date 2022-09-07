@@ -163,7 +163,6 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node) (fi
 		if fsn.Type() == ft.TSymlink {
 			return files.NewLinkFile(string(fsn.Data()), nil), nil
 		}
-
 	case *dag.RawNode:
 	default:
 		return nil, errors.New("unknown node type")
@@ -178,6 +177,3 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node) (fi
 		DagReader: dr,
 	}, nil
 }
-
-var _ files.Directory = &ufsDirectory{}
-var _ files.File = &ufsFile{}

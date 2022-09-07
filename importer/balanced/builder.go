@@ -56,7 +56,10 @@ import (
 	h "github.com/ipfs/go-unixfs/importer/helpers"
 
 	ipld "github.com/ipfs/go-ipld-format"
+	logging "github.com/ipfs/go-log"
 )
+
+var log = logging.Logger("importer/balanced/builder")
 
 // Layout builds a balanced DAG layout. In a balanced DAG of depth 1, leaf nodes
 // with data are added to a single `root` until the maximum number of links is
@@ -130,7 +133,9 @@ import (
 //        +=========+   +=========+   + - - - - +
 //
 func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
+	log.Debug("inside Layout 2")
 	if db.Done() {
+		log.Debug("db.done on leyout")
 		// No data, return just an empty node.
 		root, err := db.NewLeafNode(nil, ft.TFile)
 		if err != nil {
@@ -256,6 +261,110 @@ func fillNodeRec(db *h.DagBuilderHelper, node *h.FSNodeOverDag, depth int) (fill
 
 	// Get the final `dag.ProtoNode` with the `FSNode` data encoded inside.
 	filledNode, err = node.Commit()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return filledNode, nodeFileSize, nil
+}
+
+func LayoutEnc(db *h.DagBuilderHelper, jwe []byte) (ipld.Node, error) {
+	log.Debug("inside LayoutEnc", jwe)
+	if db.Done() {
+		log.Debug("inside LayoutEnc db.Done() block", jwe)
+		// No data, return just an empty node.
+		root, err := db.NewLeafNode(nil, ft.TEncFile)
+		if err != nil {
+			return nil, err
+		}
+		// This works without Filestore support (`ProcessFileStore`).
+		// TODO: Why? Is there a test case missing?
+
+		return root, db.Add(root)
+	}
+
+	// The first `root` will be a single leaf node with data
+	// (corner case), after that subsequent `root` nodes will
+	// always be internal nodes (with a depth > 0) that can
+	// be handled by the loop.
+	root, fileSize, err := db.NewLeafEncDataNode(ft.TEncFile, jwe)
+	if err != nil {
+		return nil, err
+	}
+
+	// Each time a DAG of a certain `depth` is filled (because it
+	// has reached its maximum capacity of `db.Maxlinks()` per node)
+	// extend it by making it a sub-DAG of a bigger DAG with `depth+1`.
+	log.Debug("before tree buildd")
+	for depth := 1; !db.Done(); depth++ {
+		log.Debug("before fillenc")
+
+		// Add the old `root` as a child of the `newRoot`.
+		newRoot := db.NewFSNodeOverDag(ft.TEncFile)
+		newRoot.AddChild(root, fileSize, db)
+
+		// Fill the `newRoot` (that has the old `root` already as child)
+		// and make it the current `root` for the next iteration (when
+		// it will become "old").
+		root, fileSize, err = fillEncNodeRec(db, newRoot, depth, jwe)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return root, db.Add(root)
+}
+
+func fillEncNodeRec(db *h.DagBuilderHelper, node *h.FSNodeOverDag, depth int, jwe []byte) (filledNode ipld.Node, nodeFileSize uint64, err error) {
+	if depth < 1 {
+		return nil, 0, errors.New("attempt to fillNode at depth < 1")
+	}
+
+	if node == nil {
+		node = db.NewFSNodeOverDag(ft.TEncFile)
+	}
+
+	// Child node created on every iteration to add to parent `node`.
+	// It can be a leaf node or another internal node.
+	var childNode ipld.Node
+	// File size from the child node needed to update the `FSNode`
+	// in `node` when adding the child.
+	var childFileSize uint64
+
+	// While we have room and there is data available to be added.
+	for node.NumChildren() < db.Maxlinks() && !db.Done() {
+
+		if depth == 1 {
+			// Base case: add leaf node with data.
+			childNode, childFileSize, err = db.NewLeafDataNode(ft.TFile)
+			if err != nil {
+				return nil, 0, err
+			}
+		} else {
+			// Recursion case: create an internal node to in turn keep
+			// descending in the DAG and adding child nodes to it.
+			childNode, childFileSize, err = fillEncNodeRec(db, nil, depth-1, jwe)
+			if err != nil {
+				return nil, 0, err
+			}
+		}
+
+		err = node.AddChild(childNode, childFileSize, db)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	nodeFileSize = node.FileSize()
+
+	// Get the final `dag.ProtoNode` with the `FSNode` data encoded inside.
+	if db.Done() {
+		filledNode, err = node.CommitWJwe(jwe)
+		log.Debug("Committed with JWE")
+	} else {
+		filledNode, err = node.Commit()
+		log.Debug("Committed normally")
+	}
 	if err != nil {
 		return nil, 0, err
 	}
