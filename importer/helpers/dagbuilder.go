@@ -141,7 +141,7 @@ func (db *DagBuilderHelper) GetCidBuilder() cid.Builder {
 // NewLeafNode creates a leaf node filled with data.  If rawLeaves is
 // defined then a raw leaf will be returned.  Otherwise, it will create
 // and return `FSNodeOverDag` with `fsNodeType`.
-func (db *DagBuilderHelper) NewLeafNode(data []byte, fsNodeType pb.Data_DataType) (ipld.Node, error) {
+func (db *DagBuilderHelper) NewLeafNode(data []byte, fsNodeType pb.Data_FxDataType) (ipld.Node, error) {
 	if len(data) > BlockSizeLimit {
 		return nil, ErrSizeLimitExceeded
 	}
@@ -172,7 +172,7 @@ func (db *DagBuilderHelper) NewLeafNode(data []byte, fsNodeType pb.Data_DataType
 	return node, nil
 }
 
-func (db *DagBuilderHelper) NewEncLeafNode(data []byte, fsNodeType pb.Data_DataType, jwe []byte) (ipld.Node, error) {
+func (db *DagBuilderHelper) NewEncLeafNode(data []byte, fsNodeType pb.Data_FxDataType, jwe []byte) (ipld.Node, error) {
 	if len(data) > BlockSizeLimit {
 		return nil, ErrSizeLimitExceeded
 	}
@@ -235,7 +235,7 @@ func (db *DagBuilderHelper) FillNodeLayer(node *FSNodeOverDag) error {
 // the DAG file size). The size of the data is computed here because
 // after that it will be hidden by `NewLeafNode` inside a generic
 // `ipld.Node` representation.
-func (db *DagBuilderHelper) NewLeafDataNode(fsNodeType pb.Data_DataType) (node ipld.Node, dataSize uint64, err error) {
+func (db *DagBuilderHelper) NewLeafDataNode(fsNodeType pb.Data_FxDataType) (node ipld.Node, dataSize uint64, err error) {
 	fileData, err := db.Next()
 	if err != nil {
 		return nil, 0, err
@@ -254,7 +254,7 @@ func (db *DagBuilderHelper) NewLeafDataNode(fsNodeType pb.Data_DataType) (node i
 	return node, dataSize, nil
 }
 
-func (db *DagBuilderHelper) NewLeafEncDataNode(fsNodeType pb.Data_DataType, jwe []byte) (node ipld.Node, dataSize uint64, err error) {
+func (db *DagBuilderHelper) NewLeafEncDataNode(fsNodeType pb.Data_FxDataType, jwe []byte) (node ipld.Node, dataSize uint64, err error) {
 	fileData, err := db.Next()
 	if err != nil {
 		return nil, 0, err
@@ -344,7 +344,7 @@ type FSNodeOverDag struct {
 // decoupled from one onther (and will continue in that way until
 // `Commit` is called), with `fsNodeType` specifying the type of
 // the UnixFS layer node (either `File` or `Raw`).
-func (db *DagBuilderHelper) NewFSNodeOverDag(fsNodeType pb.Data_DataType) *FSNodeOverDag {
+func (db *DagBuilderHelper) NewFSNodeOverDag(fsNodeType pb.Data_FxDataType) *FSNodeOverDag {
 	node := new(FSNodeOverDag)
 	node.dag = new(dag.ProtoNode)
 	node.dag.SetCidBuilder(db.GetCidBuilder())
@@ -354,7 +354,7 @@ func (db *DagBuilderHelper) NewFSNodeOverDag(fsNodeType pb.Data_DataType) *FSNod
 	return node
 }
 
-func (db *DagBuilderHelper) NewEncFSNodeOverDag(fsNodeType pb.Data_DataType, jwe []byte) *FSNodeOverDag {
+func (db *DagBuilderHelper) NewEncFSNodeOverDag(fsNodeType pb.Data_FxDataType, jwe []byte) *FSNodeOverDag {
 	node := new(FSNodeOverDag)
 	node.dag = new(dag.ProtoNode)
 	node.dag.SetCidBuilder(db.GetCidBuilder())

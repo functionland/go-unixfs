@@ -169,7 +169,7 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestIsDir(t *testing.T) {
-	prepares := map[pb.Data_DataType]bool{
+	prepares := map[pb.Data_FxDataType]bool{
 		TDirectory: true,
 		THAMTShard: true,
 		TFile:      false,

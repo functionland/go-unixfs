@@ -203,7 +203,7 @@ func FSNodeFromBytes(b []byte) (*FSNode, error) {
 // (If it wasn't initialized there could be cases where `Filesize` could
 // have been left at nil, when the `FSNode` was created but no data or
 // child nodes were set to adjust it, as is the case in `NewLeaf()`.)
-func NewFSNode(dataType pb.Data_DataType) *FSNode {
+func NewFSNode(dataType pb.Data_FxDataType) *FSNode {
 	n := new(FSNode)
 	n.format.Type = &dataType
 
@@ -299,7 +299,7 @@ func (n *FSNode) UpdateFilesize(filesizeDiff int64) {
 }
 
 // Type retrieves the `Type` field from the internal `format`.
-func (n *FSNode) Type() pb.Data_DataType {
+func (n *FSNode) Type() pb.Data_FxDataType {
 	return n.format.GetType()
 }
 
