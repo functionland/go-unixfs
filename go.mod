@@ -3,7 +3,7 @@ module github.com/functionland/go-unixfs
 go 1.18
 
 require (
-	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137
+	github.com/alecthomas/units v0.0.0-20210927113745-59d0afb8317a
 	github.com/gogo/protobuf v1.3.2
 	github.com/ipfs/go-bitfield v1.0.0
 	github.com/ipfs/go-block-format v0.0.3
